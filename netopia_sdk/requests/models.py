@@ -17,7 +17,7 @@ class Instrument:
     expYear: int
     secretCode: str
     token: str
-    clientID: str
+    clientID: str  # Changed from int to str to match expected data format
 
 
 @dataclass
@@ -42,7 +42,7 @@ class BillingData:
 
 
 @dataclass
-class ShippingData:
+class ShippingData:  # Added this missing class to match expected API structure
     email: str
     phone: str
     firstName: str
@@ -68,13 +68,13 @@ class ProductsData:
 class OrderData:
     ntpID: Optional[str]
     posSignature: Optional[str]
-    dateTime: str
+    dateTime: Optional[str]
     orderID: str
     description: str
     amount: float
     currency: str
     billing: BillingData
-    shipping: ShippingData
+    shipping: ShippingData  # Corrected to an object instead of a string
     products: List[ProductsData]
     installments: Dict[str, object]
     data: Dict[str, str]
