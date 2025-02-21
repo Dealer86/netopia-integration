@@ -4,6 +4,7 @@ import uuid
 
 from fastapi import FastAPI, Request
 from dotenv import load_dotenv
+import uvicorn
 from netopia_sdk.config import Config
 from netopia_sdk.client import PaymentClient
 from netopia_sdk.payment import PaymentService
@@ -130,3 +131,6 @@ async def ipn_handler(request: Request):
     except Exception as e:
         return {"error": str(e)}
 
+# ✅ Run Uvicorn when executing this script directly
+if __name__ == "__main__":
+    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
