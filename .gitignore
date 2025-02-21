@@ -9,3 +9,4 @@ dist/
 
 .env
 .venv
+public_key.pem

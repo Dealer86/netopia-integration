@@ -2,6 +2,7 @@ from datetime import datetime
 import os
 import uuid
 
+from fastapi import FastAPI, Request
 from dotenv import load_dotenv
 from netopia_sdk.config import Config
 from netopia_sdk.client import PaymentClient
@@ -37,12 +38,12 @@ config = Config(
 client = PaymentClient(config)
 payment_service = PaymentService(client)
 
-# Define payment request data
+# ✅ Define payment request data
 start_payment_request = StartPaymentRequest(
     config=ConfigData(
         emailTemplate="default",
         emailSubject="Order Confirmation",
-        cancelUrl="https://info.arhivadefacturi.ro/return.php",
+        cancelUrl=REDIRECT_URL,
         notifyUrl=config.notify_url,
         redirectUrl=config.redirect_url,
         language="ro",
@@ -52,7 +53,7 @@ start_payment_request = StartPaymentRequest(
         data={"ceva cheie": "ceva valoare"},
         instrument=Instrument(
             type="card",
-            account="4111111111111111",  # Ensure this is a valid test card
+            account="4111111111111111",  # ✅ Use a valid test card
             expMonth=12,
             expYear=2025,
             secretCode="123",
@@ -61,14 +62,13 @@ start_payment_request = StartPaymentRequest(
         ),
     ),
     order=OrderData(
-        
-        orderID="R12345",
+        orderID=str(uuid.uuid4()),  # ✅ Ensure orderID is unique
         amount=1.0,
         currency="RON",
         description="Comanda de plata test",
-        ntpID="",  # Use UUID for transaction ID ??
-        posSignature="aici pos signature",  # Ensure this is valid
-        dateTime = datetime.now().isoformat(),  # ✅ Correct format
+        ntpID="",  # Let Netopia generate it
+        posSignature=POS_SIGNATURE,  # ✅ Ensure this is correct
+        dateTime=datetime.now().isoformat(),  # ✅ Use ISO timestamp
         shipping=ShippingData(
             email="customer@example.com",
             phone="1234567890",
@@ -81,7 +81,7 @@ start_payment_request = StartPaymentRequest(
             postalCode="550055",
             details="ceva detalii aici"
         ),
-        installments={},  # Ensure this is correct (or use [])
+        installments={},  # ✅ Ensure correct format
         data={"order data key": "order data value"},
         billing=BillingData(
             email="customer@example.com",
@@ -101,11 +101,32 @@ start_payment_request = StartPaymentRequest(
     ),
 )
 
-# Start Payment
+# ✅ Start Payment
 response = payment_service.start_payment(start_payment_request)
 print("Start Payment Response:", response)
 
-# Get Payment Status
+# ✅ Get Payment Status
 response = payment_service.get_status(ntpID=str(uuid.uuid4()), orderID="R12345")
 print("Order Status Response:", response)
+
+# ✅ Verify 3D Secure Auth
+response = payment_service.verify_auth(
+    authenticationToken="authToken123",
+    ntpID="ntpID-123456",
+    formData={"paRes": "paResData"},
+)
+print("VerifyAuth Response:", response)
+
+# ✅ Initialize FastAPI for IPN Verification
+app = FastAPI()
+
+@app.post("/ipn")
+async def ipn_handler(request: Request):
+    """Handles Netopia IPN (Instant Payment Notification) verification."""
+    try:
+        ipn_data = await request.body()
+        result = payment_service.verify_ipn(ipn_data)
+        return {"message": "IPN verified", "data": result}
+    except Exception as e:
+        return {"error": str(e)}
 
